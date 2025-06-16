@@ -14,6 +14,7 @@ print(f"##### Main App Initialization #####")
 try: 
     from Doc_QnA_RAG import rag_qa_tool, setup_rag_system
     from News import financial_news_search
+    from GeneralQnA import GeneralQnA
     print("Successfully imported the tools")
 except ImportError as e:
     print(f"ERROR: Could not import a tool. Make sure the file is in the correct directory. {e}")
@@ -30,7 +31,7 @@ llm = ChatGroq(model="llama-3.1-8b-instant")
 
 
 # Create list of all tools
-tools = [rag_qa_tool,financial_news_search]
+tools = [rag_qa_tool,financial_news_search,GeneralQnA]
 print(f" tools defined: {[t.name for t in tools]}")
 
 

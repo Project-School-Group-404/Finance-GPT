@@ -10,7 +10,7 @@ llm = ChatGroq(
     max_tokens=200,
 )
 
-def answer(question: str) -> str:
+def GeneralQnA(question: str) -> str:
     """
     Answers a General conversational type questions 
     use when the question can answered from pre existing knowledge
