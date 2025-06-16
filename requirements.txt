@@ -1,0 +1,15 @@
+streamlit
+langchain
+langchain-community
+langchain-core
+langchain-huggingface
+langchain-pinecone
+langchain-groq
+langchain-docling
+pinecone-client
+transformers
+docling
+ipython
+pillow
+langgraph
+tavily-python
