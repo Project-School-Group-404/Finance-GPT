@@ -1,6 +1,6 @@
 import time
 import streamlit as st
-from qnaagent import answer  # Ensure this imports the graph correctly
+from GeneralQnA import answer  # Ensure this imports the graph correctly
 st.title("🤖 LangGraph QnA Agent")
 user_question = st.text_input("Ask your question:")
 # if st.button("Get Answer"):
