@@ -1,2 +1,4 @@
 rough.py
 .env
+*.env
+**/.env

@@ -63,18 +63,27 @@ agent= initialize_agent(toolss, llm, agent="structured-chat-zero-shot-react-desc
 from IPython.display import display, Markdown
 import streamlit as st
 
+from presidio_analyzer import AnalyzerEngine
+from presidio_anonymizer import AnonymizerEngine
+
+analyzer = AnalyzerEngine()
+anonymizer = AnonymizerEngine()
+
 st.markdown("<h1 style='text-align: center;'>🤖🤝🏦</h1>", unsafe_allow_html=True)
 st.markdown("<h1 style='text-align: center; font-size: 40px;'>FinTech Demo Agent</h1>", unsafe_allow_html=True)
 st.text_input("Type in your Prompt", key="user_prompt")
 user_input = st.session_state.user_prompt
+user_proompt= analyzer.analyze(text=user_input, entities=[], language='en')
+anonymized_result = anonymizer.anonymize(text=user_input, analyzer_results=user_proompt)
 
 if user_input:
+    st.write(anonymized_result)
     with st.spinner("Let me think... 💭"):
         # container = st.container()
         # handler = StreamlitCallbackHandler(container)
         
         output= agent.invoke({
-            "input": f"{user_input}",
+            "input": f"{anonymized_result}",
             "chat_history": []
             },
             #callbacks=[handler]
