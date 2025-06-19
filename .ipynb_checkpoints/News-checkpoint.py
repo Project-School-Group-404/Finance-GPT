@@ -1,7 +1,6 @@
 import os
 from langchain_core.tools import tool
 from tavily import TavilyClient
-from langchain_tavily import TavilySearch
 from dotenv import load_dotenv
 from pprint import pprint
 from IPython.display import Markdown, display
@@ -14,8 +13,22 @@ tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
 def financial_news_search(query: str) -> str:
     """
-    this tool is used to answer queries which needs latest news feed
+    Use this tool for general knowledge questions, explanations, how-to questions,
+    or any query that doesn't require specific documents or current information
+    Search for live financial news, market updates, stock prices, economic data, 
+    and financial analysis. Use this tool when users ask about:
+    - Current stock prices or market performance
+    - Breaking financial news
+    - Economic indicators and reports
+    - Company earnings or financial results
+    - Market trends and analysis
+    - Cryptocurrency prices and news
+    - Financial regulatory updates
+    
+    Args:
+        query: The financial topic or question to search for
     """
+
     print("news tool invoked")
     try:
         print(f"Searching financial news for: {query}")
@@ -44,7 +57,7 @@ def financial_news_search(query: str) -> str:
                 "instagram.com"
             ]
         )
-        response = tool.invoke(query)
+        
         if not response.get('results'):
             return f"No recent financial news found for: {query}"
             

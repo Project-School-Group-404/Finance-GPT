@@ -8,6 +8,10 @@ import streamlit as st
 import re
 import time
 from dotenv import load_dotenv
+import tempfile
+import uuid
+
+# Load environment variables
 load_dotenv()
 
 # Import your RAG tool from the other file
