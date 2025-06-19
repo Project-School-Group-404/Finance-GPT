@@ -29,4 +29,3 @@ def gen_qna(question: str)->str:
     #     response+= chunk.choices[0].delta.content or ''
     #     response = response.replace("```","").replace("markdown", "")
     #     update_display(Markdown(response), display_id= display_handle.display_id)
-
