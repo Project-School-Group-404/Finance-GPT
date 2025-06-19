@@ -8,8 +8,10 @@ langchain-groq
 langchain-docling
 pinecone-client
 transformers
+sentence-transformers
 docling
 ipython
 pillow
 langgraph
 tavily-python
+langchain-google-genai
