@@ -2,3 +2,7 @@ rough.py
 .env
 *.env
 **/.env
+.DS_Store
+.Rhistory
+__pycache__
+
