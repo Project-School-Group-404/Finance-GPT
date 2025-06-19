@@ -72,6 +72,7 @@ tools = [doc_qna_tool, news_tool]
 agent = create_react_agent(model=llm, tools=tools, prompt=system_message)
 print("LangGraph ReAct agent created.")
 
+
 # def process_query(user_input, chat_history=None):
 #     """Process user query through the LangGraph agent"""
 #     print(f"\n--- Entering process_query ---")
@@ -159,17 +160,6 @@ def process_query(user_input, chat_history=None):
     except Exception as e:
         print(f"Error in process_query: {str(e)}")
         return f"I encountered an error: {str(e)}", messages
-
-
-
-
-
-
-
-
-
-
-
 
 def main():
     st.set_page_config(
