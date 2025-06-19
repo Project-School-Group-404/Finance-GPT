@@ -172,9 +172,3 @@ def rag_qa_tool(query: str) -> str:
     except Exception as e:
         return f"Error processing query: {str(e)}"
     
-
-
-
-
-
-
