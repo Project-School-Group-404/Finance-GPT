@@ -5,12 +5,13 @@ from langchain_tavily import TavilySearch
 from dotenv import load_dotenv
 from pprint import pprint
 from IPython.display import Markdown, display
-import trafilatura
+import trafilatura 
 
 
 load_dotenv()
 
 tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
 
 def financial_news_search(query: str) -> str:
     """
@@ -27,7 +28,7 @@ def financial_news_search(query: str) -> str:
             max_results=3,
             country="India",
             include_domains=[
-                "coindesk.com",
+                # "coindesk.com",
                 "financialexpress.com",
                 "economictimes.indiatimes.com",
                 "livemint.com",
@@ -44,7 +45,6 @@ def financial_news_search(query: str) -> str:
                 "instagram.com"
             ]
         )
-        response = tool.invoke(query)
         if not response.get('results'):
             return f"No recent financial news found for: {query}"
             
@@ -78,9 +78,11 @@ def financial_news_search(query: str) -> str:
             temperature= 0.5
         )
         final_result= llm_response.choices[0].message.content + "\n\n" + '\n'.join(urls)
-        return display(Markdown(final_result))
-        
+        # print(display(Markdown(final_result)))
+        return final_result
+
     except Exception as e:
         error_msg = f"Error searching financial news: {str(e)}"
         print(f"{error_msg}")
         return error_msg
+    
