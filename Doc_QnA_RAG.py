@@ -33,7 +33,7 @@ embeddings_model = HuggingFaceEmbeddings(
 )
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=900, chunk_overlap=200)
-model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
+model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
 
 
 
@@ -170,3 +170,4 @@ def rag_qa_tool(query: str) -> str:
     except Exception as e:
         return f"Error processing query: {str(e)}"
     
+rag_qa_tool("How much is the total revenue for the year 2023?")
