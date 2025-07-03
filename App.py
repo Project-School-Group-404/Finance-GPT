@@ -19,6 +19,7 @@ print(f"##### Main App Initialization #####")
 try: 
     from Doc_QnA_RAG import rag_qa_tool, setup_rag_system
     from News import financial_news_search
+    from laws import law_qna
     print("Successfully imported the tools\n\n")
 except ImportError as e:
     print(f"ERROR: Could not import a tool. Make sure the file is in the correct directory. {e}")
@@ -56,6 +57,15 @@ def doc_qna_tool(ques: str) -> str:
     Do NOT use this tool for general finance knowledge or web search queries.
     """
     return rag_qa_tool(ques)
+
+
+@tool
+def law_tool(ques:str)->str:
+    """
+        Use this tool when the user asks a question that requires information about the indian finance legal framework
+        Answer with the exact same specifics that the tool gives you
+    """
+    return law_qna(ques)
 
 # Create system message with better instructions
 system_message = SystemMessage(content="""You are Finance GPT, a helpful financial assistant. 

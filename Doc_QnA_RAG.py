@@ -129,7 +129,6 @@ def setup_rag_system(file_path: str):
     # return vector_store
     
 
-
 @tool 
 def rag_qa_tool(query: str) -> str:
     """"
@@ -166,9 +165,8 @@ def rag_qa_tool(query: str) -> str:
         return_source_documents=True
     )
 
-
     try:
-        return rag_chain.invoke(query).content
+         return rag_chain.invoke(query)['result']
     except Exception as e:
         return f"Error processing query: {str(e)}"
     
