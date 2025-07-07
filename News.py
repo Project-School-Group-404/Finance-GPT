@@ -1,16 +1,18 @@
 import os
 from langchain_core.tools import tool
+from langchain_google_genai import ChatGoogleGenerativeAI
 from tavily import TavilyClient
 from langchain_tavily import TavilySearch
 from dotenv import load_dotenv
 from pprint import pprint
 from IPython.display import Markdown, display
-import trafilatura
+import trafilatura 
 
 
 load_dotenv()
 
 tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
 
 def financial_news_search(query: str) -> str:
     """
@@ -27,7 +29,7 @@ def financial_news_search(query: str) -> str:
             max_results=3,
             country="India",
             include_domains=[
-                "coindesk.com",
+                # "coindesk.com",
                 "financialexpress.com",
                 "economictimes.indiatimes.com",
                 "livemint.com",
@@ -44,7 +46,6 @@ def financial_news_search(query: str) -> str:
                 "instagram.com"
             ]
         )
-        response = tool.invoke(query)
         if not response.get('results'):
             return f"No recent financial news found for: {query}"
             
@@ -65,22 +66,48 @@ def financial_news_search(query: str) -> str:
             )
             extracted_text+= text
             
-        from openai import OpenAI
-        MODEL = "llama3-70b-8192"
-        client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
-        system_prompt= "You will be given contents of 3 articles, your job is to remove any irrelevant information from it, and analyse the content and present it in markdown in a presentable and understandable manner."
-        llm_response= client.chat.completions.create(
-            model=MODEL,
-            messages= [
-                {'role':'system', 'content':system_prompt},
-                {'role':'user', 'content':extracted_text}
-            ],
-            temperature= 0.5
+        # from openai import OpenAI
+        # MODEL = "llama3-8b-8192"
+        # client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
+        # system_prompt= "You will be given contents of 3 articles, your job is to remove any irrelevant information from it, and analyse the content and present it in markdown in a presentable and understandable manner."
+        # llm_response= client.chat.completions.create(
+        #     model=MODEL,
+        #     messages= [
+        #         {'role':'system', 'content':system_prompt},
+        #         {'role':'user', 'content':extracted_text}
+        #     ],
+        #     temperature= 0.5
+        # )
+        # final_result= llm_response.choices[0].message.content + "\n\n" + '\n'.join(urls)
+        # # print(display(Markdown(final_result)))
+        # return final_result
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+    # Create Gemini Flash client
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0.5
         )
-        final_result= llm_response.choices[0].message.content + "\n\n" + '\n'.join(urls)
-        return display(Markdown(final_result))
-        
+
+        # Prepare messages
+        system_prompt = "You will be given contents of 3 articles. Your job is to remove any irrelevant information, analyze the content, and present it in markdown in a clear, presentable, and understandable way."
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=extracted_text)
+        ]
+
+        # Get Gemini response
+        response = llm.invoke(messages)
+
+        # Build final result
+        final_result = response.content + "\n\n" + '\n'.join(urls)
+        return final_result
+
+
     except Exception as e:
         error_msg = f"Error searching financial news: {str(e)}"
         print(f"{error_msg}")
         return error_msg
+    
+# print(financial_news_search("Current price of bitcoin?"))
