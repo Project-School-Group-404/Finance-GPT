@@ -1,2 +1,12 @@
 rough.py
 .env
+docQnAaditya.py
+GeneralQnA.py
+*.env
+**/.env
+.DS_Store
+.Rhistory
+__pycache__
+
+
+/generated/prisma
