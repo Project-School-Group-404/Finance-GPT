@@ -126,9 +126,9 @@ def setup_rag_system(file_path: str):
     vector_store.save_local(cache_path)
     print(f"Saved FAISS index cache at {cache_path}")
 
-    # return vector_store
+    return vector_store
     
-# setup_rag_system("prolog example 3 ai lab.pdf")
+setup_rag_system("microsoftFY 2024.pdf")
 
 @tool 
 def rag_qa_tool(query: str) -> str:
@@ -168,8 +168,10 @@ def rag_qa_tool(query: str) -> str:
 
 
     try:
-        return rag_chain.invoke(query).content
+        return rag_chain.invoke(query)['result']
     except Exception as e:
         return f"Error processing query: {str(e)}"
     
-rag_qa_tool("How much is the total revenue for the year 2023?")
+
+
+# print(rag_qa_tool("How much is the total revenue for the year 2023?"))

@@ -10,6 +10,7 @@ import time
 from dotenv import load_dotenv
 import tempfile
 import uuid
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -171,8 +172,26 @@ def main():
         page_icon="💰",
         layout="wide"
     )
-    
+    query_params = st.query_params
+    user_id = query_params.get("userId", [None])[0]
+    if not user_id:
+        st.warning("🔒 Please login to continue. Missing `userId` in the URL.")
+        st.stop()
     # Custom CSS
+    BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:3000")
+
+    def fetch_user_chats(user_id):
+        try:
+            response = requests.get(f"{BACKEND_URL}/api/chats/{user_id}")
+            if response.status_code == 200:
+                return response.json()  # Returns a list of chat objects
+            else:
+                print(f"Error fetching chat history: {response.status_code}")
+                return []
+        except Exception as e:
+            print(f"Exception fetching chats: {e}")
+            return []
+
     st.markdown("""
     <style>
         .stChatMessage {
@@ -195,7 +214,24 @@ def main():
 
     # Initialize session state
     if "chat_history" not in st.session_state:
+    # Load user chat history from backend
+        user_chats = fetch_user_chats(user_id)
+        
         st.session_state.chat_history = []
+        st.session_state.langgraph_messages = []
+
+        for chat in reversed(user_chats):
+            user_msg = chat["userMessage"]
+            bot_msg = chat["assistantReply"]
+            
+            st.session_state.chat_history.append({"role": "user", "content": user_msg})
+            st.session_state.chat_history.append({"role": "assistant", "content": bot_msg})
+
+            st.session_state.langgraph_messages.append(HumanMessage(content=user_msg))
+            st.session_state.langgraph_messages.append(AIMessage(content=bot_msg))
+
+        st.session_state.processed_file = None
+
     if "processed_file" not in st.session_state:
         st.session_state.processed_file = None
     if "langgraph_messages" not in st.session_state:
@@ -290,11 +326,27 @@ def main():
                 st.session_state.chat_history.append({
                     "role": "assistant", 
                     "content": full_response
-                })
+            })
+
+                # Save to backend
+                try:
+                    chat_payload = {
+                        "userId": int(user_id),
+                        "userMessage": prompt,
+                        "assistantReply": full_response
+                    }
+                    response = requests.post("http://localhost:3000/api/chats", json=chat_payload)
+                    if response.status_code != 200:
+                        print(f"⚠️ Failed to store chat: {response.text}")
+                    else:
+                        print("✅ Chat stored successfully")
+                except Exception as e:
+                    print(f"❌ Error saving chat: {e}")
 
     # Welcome message for new users
-    if not st.session_state.chat_history:
-        st.markdown(""" Welcome to Finance GPT!""")
+    if len(st.session_state.chat_history) == 0:
+        with st.chat_message("assistant"):
+            st.markdown("👋 Welcome to Finance GPT! Ask me about finance, your documents, or the latest market news.")
 
 if __name__ == "__main__":
     main()
