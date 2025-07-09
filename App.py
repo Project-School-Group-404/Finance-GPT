@@ -6,10 +6,11 @@ from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import requests
+from typing import List, Optional
 
 # Load environment variables
 load_dotenv()
@@ -18,6 +19,7 @@ print(f"##### Main App Initialization #####")
 try:
     from Doc_QnA_RAG import rag_qa_tool, setup_rag_system
     from News import financial_news_search
+    from laws import law_qna
     print("Successfully imported the tools\n\n")
 except ImportError as e:
     print(f"ERROR: Could not import a tool. {e}")
@@ -54,6 +56,14 @@ def doc_qna_tool(ques: str) -> str:
     """
     return rag_qa_tool(ques)
 
+@tool
+def law_tool(ques: str) -> str:
+    """
+    Use this tool when the user asks a question that requires information about the Indian finance legal framework.
+    Answer with the exact same specifics that the tool gives you.
+    """
+    return law_qna(ques)
+
 system_message = SystemMessage(content="""
 You are Finance GPT, a helpful financial assistant.
 
@@ -61,19 +71,19 @@ You have access to:
 - A user-uploaded document (if available)
 - A tool called doc_qna_tool for answering questions based on that document
 - A tool called news_tool for retrieving current market news or stock prices
+- A tool called law_tool for answering queries about Indian finance laws
 
 Instructions:
-1. If a document is available and the user's question could reasonably be related to it (e.g. it asks about data, policies, values, definitions, or anything likely to be found in a report), use `doc_qna_tool` even if the document is not explicitly mentioned.
+1. If a document is available and the user's question could reasonably be related to it (e.g. it asks about data, policies, values, definitions, or anything likely to be found in a report), use `doc_qna_tool`.
 2. Use `news_tool` only for **current or live** financial news or market updates.
-3. For general financial knowledge, answer directly.
-4. Be conversational and professional.
-5. If you use a tool, embed its output naturally in your answer.
-6. If no document is uploaded, do not use doc_qna_tool.
-
-Remember: You always prefer using the document if a document is uploaded and the user asks a related question.
+3. Use `law_tool` for anything related to Indian financial legal frameworks.
+4. For general financial knowledge, answer directly.
+5. Be conversational and professional.
+6. If you use a tool, embed its output naturally in your answer.
+7. If no document is uploaded, do not use doc_qna_tool.
 """)
 
-tools = [doc_qna_tool, news_tool]
+tools = [doc_qna_tool, news_tool, law_tool]
 agent = create_react_agent(model=llm, tools=tools, prompt=system_message)
 print("LangGraph ReAct agent created.")
 
@@ -86,7 +96,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from typing import List, Optional
 
 class QueryRequest(BaseModel):
     userId: int
@@ -104,8 +113,7 @@ def chat_endpoint(request: QueryRequest):
         result = agent.invoke({"messages": messages})
         response = next((msg.content for msg in reversed(result["messages"]) if isinstance(msg, AIMessage)),
                         "I apologize, but I couldn't generate a proper response.")
-        
-        # ✅ Save chat to Node.js backend (or whatever handles DB)
+
         try:
             requests.post("http://localhost:3000/api/chat", json={
                 "userId": request.userId,
@@ -116,7 +124,7 @@ def chat_endpoint(request: QueryRequest):
             print(f"Warning: Failed to save chat: {save_err}")
 
         return {"reply": response, "history": [msg.content for msg in result["messages"]]}
-    
+
     except Exception as e:
         print(f"Error: {e}")
         return {"reply": f"Error: {e}", "history": request.history}

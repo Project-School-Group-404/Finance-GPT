@@ -10,3 +10,4 @@ __pycache__
 
 
 /generated/prisma
+node_modules

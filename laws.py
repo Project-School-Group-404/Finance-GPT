@@ -1,26 +1,24 @@
 import os
-from langchain_core.tools import tool
-from tavily import TavilyClient
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, SystemMessage
 from dotenv import load_dotenv
-from pprint import pprint
-from IPython.display import Markdown, display
-import trafilatura
-from openai import OpenAI
 
 load_dotenv()
-api_key= os.getenv('GROQ_API_KEY')
 
-def law_qna(question: str)->str:
-    MODEL = "llama3-70b-8192"
-    client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
-    system_prompt= "You are a tool being used by an agent. You will be asked questions about legal framework of india, including acts, rules , and reulations. You job is to give the answer properly using proper accurate information, such as section number, etc."
-    response= client.chat.completions.create(
-        model=MODEL,
-        messages= [
-            {'role':'system', 'content':system_prompt},
-            {'role':'user', 'content':question}
-        ],
-        temperature= 0.5
+def law_qna(question: str) -> str:
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",  # or "gemini-2.0-flash" for faster, cheaper
+        temperature=0.3,
+        max_tokens=None
     )
-    return display(Markdown(response.choices[0].message.content))
 
+    system_message = SystemMessage(content="""
+You are a legal assistant specialized in the financial legal framework of India. 
+When asked about Indian laws, acts, or regulations, respond with precise references to sections, clauses, or rules. 
+Always ensure legal accuracy in your answers.
+""")
+
+    messages = [system_message, HumanMessage(content=question)]
+    response = llm.invoke(messages)
+
+    return response.content
