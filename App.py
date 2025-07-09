@@ -107,13 +107,14 @@ def chat_endpoint(request: QueryRequest):
         
         # ✅ Save chat to Node.js backend (or whatever handles DB)
         try:
-            requests.post("http://localhost:3000/api/chats", json={
+            r = requests.post("http://localhost:3000/api/chat", json={
                 "userId": request.userId,
                 "userMessage": request.message,
                 "assistantReply": response
             })
+            print(f"SaveChat Response: {r.status_code} - {r.text}")
         except Exception as save_err:
-            print(f"Warning: Failed to save chat: {save_err}")
+            print(f" SaveChat Error: {save_err}")
 
         return {"reply": response, "history": [msg.content for msg in result["messages"]]}
     
