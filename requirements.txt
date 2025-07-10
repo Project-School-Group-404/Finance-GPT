@@ -9,6 +9,7 @@ langchain-groq
 langchain-docling
 pinecone-client
 transformers
+transformers[sentencepiece]
 sentence-transformers
 docling
 ipython
