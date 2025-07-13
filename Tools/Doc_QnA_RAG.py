@@ -1,14 +1,16 @@
 import os
-from io import BytesIO
 import time
 from langchain.tools import tool
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 # from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+import sentence_transformers
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+
+# from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from unstract.llmwhisperer import LLMWhispererClientV2
 import hashlib
@@ -16,6 +18,7 @@ import hashlib
 
 # Environment setup
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -33,14 +36,15 @@ embeddings_model = HuggingFaceEmbeddings(
 )
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=900, chunk_overlap=200)
-model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
-
+model = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY")
+)
 
 
 # LLM Whisperer client setup
 llm_whisperer = LLMWhispererClientV2(
     base_url="https://llmwhisperer-api.us-central.unstract.com/api/v2",
-    api_key=os.getenv("LLM_WHISPERER_API_KEY")
+    api_key=os.getenv("LLM_WHISPERER_API_KEY"),
 )
 
 prompt = PromptTemplate(
@@ -55,83 +59,75 @@ prompt = PromptTemplate(
     Context:
     {context}
     ---
-
     Question: {question}
 
     Answer:
-    """
+    """,
 )
+
 
 def pdf_to_text(file_path: str) -> str:
     """Extract text from PDF using LLM Whisperer"""
     result = llm_whisperer.whisper(file_path=file_path)
-    
+
     while True:
-        status = llm_whisperer.whisper_status(
-            whisper_hash=result['whisper_hash']
-        )
-        if status['status'] == 'processed':
-            result = llm_whisperer.whisper_retrieve(
-                whisper_hash=result['whisper_hash']
-            )
-            return result['extraction']['result_text']
+        status = llm_whisperer.whisper_status(whisper_hash=result["whisper_hash"])
+        if status["status"] == "processed":
+            result = llm_whisperer.whisper_retrieve(whisper_hash=result["whisper_hash"])
+            return result["extraction"]["result_text"]
         time.sleep(5)
 
 
-rag_chain=None
+rag_chain = None
 
-vector_store=None
+vector_store = None
 
 CACHE_DIR = "./faiss_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
+
 
 def setup_rag_system(file_path: str):
     """Process PDF and create FAISS vector store"""
     global vector_store
 
-
     file_hash = get_file_hash(file_path)
     cache_path = os.path.join(CACHE_DIR, file_hash)
 
- # Try loading cached FAISS index
+    # Try loading cached FAISS index
     if os.path.exists(cache_path):
         try:
             print(f"Loading cached FAISS index for file hash {file_hash}...")
             vector_store = FAISS.load_local(
-                cache_path,
-                embeddings_model,
-                allow_dangerous_deserialization=True
+                cache_path, embeddings_model, allow_dangerous_deserialization=True
             )
             print("Loaded cached vector store successfully.")
             return vector_store
         except Exception as e:
             print(f"Failed to load cache: {e}. Reprocessing...")
-    
+
     # Extract text from PDF
     extracted_text = pdf_to_text(file_path)
     print("Text Extracted....")
-    
+
     # Split text
     chunks = text_splitter.split_text(extracted_text)
     print("Chunks created....\n")
 
-    metadatas = [{"source": os.path.basename(file_path), "file_hash": file_hash} for _ in chunks]
+    metadatas = [
+        {"source": os.path.basename(file_path), "file_hash": file_hash} for _ in chunks
+    ]
 
-    
     # Create FAISS index
-    vector_store = FAISS.from_texts(
-        texts=chunks,
-        embedding=embeddings_model
-    )
+    vector_store = FAISS.from_texts(texts=chunks, embedding=embeddings_model)
     vector_store.save_local(cache_path)
     print(f"Saved FAISS index cache at {cache_path}")
 
-    # return vector_store
-    
+    return vector_store
 
-@tool 
-def rag_qa_tool(query: str) -> str:
-    """"
+
+@tool
+def rag_qa_tool(file_path: str, query: str) -> str:
+    """ "
     Query the processed document using the FAISS-based RAG system.
 
     Args:
@@ -146,28 +142,25 @@ def rag_qa_tool(query: str) -> str:
         It then invokes the RAG chain to retrieve relevant context and generate an answer
         to the user's query.
     """
+
+    vector_store = setup_rag_system(file_path=file_path)
+
     if not vector_store:
         return "No documents processed. Process a PDF first."
-    # rag_chain = (
-    #     RunnableParallel({
-    #         "context": vector_store.as_retriever(
-    #             search_kwargs={'k': 10},
-    #             ),
-    #         "question": RunnablePassthrough()
-    #     })
-    #     | prompt
-    #     | model
-    # )
     rag_chain = RetrievalQA.from_chain_type(
         llm=model,
         retriever=vector_store.as_retriever(search_kwargs={"k": 20}),
-        chain_type="stuff",               
-        return_source_documents=True
+        chain_type="stuff",
+        return_source_documents=True,
     )
 
     try:
-         return rag_chain.invoke(query)['result']
+        return rag_chain.invoke(query)["result"]
     except Exception as e:
         return f"Error processing query: {str(e)}"
-    
-rag_qa_tool("How much is the total revenue for the year 2023?")
+
+
+# print(rag_qa_tool.invoke({
+#     "file_path": "/home/saikrishnanair/Finance-GPT/2PageNvidia.pdf",
+#     "query": "How much is the total revenue for the year 2024?"
+# }))

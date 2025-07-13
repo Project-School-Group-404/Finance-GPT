@@ -87,57 +87,6 @@ agent = create_react_agent(model=llm, tools=tools, prompt=system_message)
 print("LangGraph ReAct agent created.")
 
 
-# def process_query(user_input, chat_history=None):
-#     """Process user query through the LangGraph agent"""
-#     print(f"\n--- Entering process_query ---")
-
-#     if chat_history is None:
-#         chat_history = []
-    
-#     # Convert Streamlit chat history to LangGraph format if needed
-#     messages = []
-#     for msg in chat_history:
-#         if isinstance(msg, (HumanMessage, AIMessage, SystemMessage)):
-#             messages.append(msg)
-#         else:
-#             # Handle any other format
-#             if hasattr(msg, 'content'):
-#                 if msg.type == 'human':
-#                     messages.append(HumanMessage(content=msg.content))
-#                 elif msg.type == 'ai':
-#                     messages.append(AIMessage(content=msg.content))
-    
-#     # Add current user message
-#     messages.append(HumanMessage(content=user_input))
-   
-#     print(f"Messages to be sent to the llm: {len(messages)} messages.")
-
-#     try:
-#         # Invoke the agent
-#         print(f"Invoking the agent with messages...")
-#         result = agent.invoke({"messages": messages})
-        
-#         # Extract the final response (last AI message)
-#         final_response = None
-#         for msg in reversed(result["messages"]):
-#             if isinstance(msg, AIMessage):
-#                 final_response = msg.content
-#                 break
-        
-#         if final_response is None:
-#             final_response = "I apologize, but I couldn't generate a proper response."
-        
-#         print(f"Extracted final_response: {final_response[:100]}...")
-        
-#         # Return the response and updated messages for next iteration
-#         return final_response, result["messages"]
-        
-#     except Exception as e:
-#         print(f"Error in process_query: {str(e)}")
-#         return f"I encountered an error: {str(e)}", messages
-
-
-
 def process_query(user_input, chat_history=None):
     """Process user query through the LangGraph agent"""
     print(f"\n--- Entering process_query ---")

@@ -67,7 +67,8 @@ def financial_news_search(query: str) -> str:
             
         from openai import OpenAI
         MODEL = "llama3-70b-8192"
-        client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
+        # client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
+        
         system_prompt= "You will be given contents of 3 articles, your job is to remove any irrelevant information from it, and analyse the content and present it in markdown in a presentable and understandable manner."
         llm_response= client.chat.completions.create(
             model=MODEL,

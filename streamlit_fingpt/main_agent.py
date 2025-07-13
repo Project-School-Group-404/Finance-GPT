@@ -1,6 +1,6 @@
 from langchain.tools import tool
 from addition import add
-from general_qna import gen_qna
+from Tools.general_qna import gen_qna
 
 @tool 
 def add_tool(a:int , b:int)->int:

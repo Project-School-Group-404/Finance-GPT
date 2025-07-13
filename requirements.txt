@@ -9,6 +9,7 @@ langchain-docling
 pinecone-client
 transformers
 sentence-transformers
+pytz
 docling
 ipython
 pillow

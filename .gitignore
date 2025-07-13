@@ -7,4 +7,10 @@ GeneralQnA.py
 .DS_Store
 .Rhistory
 __pycache__
+/miscellaneous/
+/Notebooks/
+/faiss_cache/
+Graph.ipynb
+2PageNvidia.pdf
+prompt.py
 
