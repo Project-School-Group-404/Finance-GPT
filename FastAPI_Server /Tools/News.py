@@ -1,23 +1,23 @@
 import os
 from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage,HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from tavily import TavilyClient
-from langchain_tavily import TavilySearch
 from dotenv import load_dotenv
 from pprint import pprint
-from IPython.display import Markdown, display
 import trafilatura 
-
 
 load_dotenv()
 
 tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
-
+@tool
 def financial_news_search(query: str) -> str:
     """
     this tool is used to answer queries which needs latest news feed
     """
     print("news tool invoked")
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
     try:
         print(f"Searching financial news for: {query}")
         enhanced_query = f"latest financial news on {query}"
@@ -47,9 +47,7 @@ def financial_news_search(query: str) -> str:
         )
         if not response.get('results'):
             return f"No recent financial news found for: {query}"
-            
         urls = [result.get('url') for result in response['results'] if result.get('url')]
-
         extracted_text=""
         for url in urls:
             downloaded= trafilatura.fetch_url(url)
@@ -64,26 +62,14 @@ def financial_news_search(query: str) -> str:
                 date_extraction_params={"extensive_search": True}
             )
             extracted_text+= text
-            
-        from openai import OpenAI
-        MODEL = "llama3-70b-8192"
-        # client = OpenAI(api_key= os.getenv('GROQ_API_KEY'), base_url="https://api.groq.com/openai/v1") 
-        
-        system_prompt= "You will be given contents of 3 articles, your job is to remove any irrelevant information from it, and analyse the content and present it in markdown in a presentable and understandable manner."
-        llm_response= client.chat.completions.create(
-            model=MODEL,
-            messages= [
-                {'role':'system', 'content':system_prompt},
-                {'role':'user', 'content':extracted_text}
-            ],
-            temperature= 0.5
-        )
-        final_result= llm_response.choices[0].message.content + "\n\n" + '\n'.join(urls)
-        # print(display(Markdown(final_result)))
+        Messages = [SystemMessage(content="You will be given contents of 3 articles, your job is to remove any irrelevant information from it, and analyse the content and present it in a presentable and understandable manner."),
+                    HumanMessage(content=extracted_text)]
+        result= llm.invoke(Messages).content
+        final_result= result + "\n\n" + '\n'.join(urls)
         return final_result
-
     except Exception as e:
         error_msg = f"Error searching financial news: {str(e)}"
         print(f"{error_msg}")
         return error_msg
     
+# print(financial_news_search.invoke({"query" : "what is the current price of solana?"}))

@@ -1,9 +1,7 @@
-import streamlit as st
 import boto3
-import io
 import os
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage, SystemMessage
 import pprint
@@ -11,7 +9,10 @@ import pprint
 load_dotenv()
 
 textract = boto3.client("textract", region_name="us-east-1")
-llm = ChatGroq(model="llama3-70b-8192", temperature=0.0)
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY")
+)
 
 
 @tool
