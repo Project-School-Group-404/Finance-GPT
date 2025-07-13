@@ -12,5 +12,4 @@ __pycache__
 /faiss_cache/
 Graph.ipynb
 2PageNvidia.pdf
-prompt.py
-
+/.ipynb_checkpoints/
