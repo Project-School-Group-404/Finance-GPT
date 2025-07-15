@@ -20,3 +20,5 @@ langchain_tavily
 trafilatura
 boto3
 unstract
+llmwhisperer-client
+faiss-cpu
