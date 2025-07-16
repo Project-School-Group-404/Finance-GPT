@@ -15,4 +15,5 @@ __pycache__
 graph.ipynb
 /FastAPI_Server /Graph.ipynb/
 .vscode
-node_modulesnode_modules/
+node_modules
+
