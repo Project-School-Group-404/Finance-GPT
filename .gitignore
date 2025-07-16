@@ -14,3 +14,5 @@ __pycache__
 /.ipynb_checkpoints/
 graph.ipynb
 /FastAPI_Server /Graph.ipynb/
+.vscode
+
