@@ -16,4 +16,6 @@ graph.ipynb
 /FastAPI_Server /Graph.ipynb/
 .vscode
 node_modules
+/server/prisma/migrations/
+
 
