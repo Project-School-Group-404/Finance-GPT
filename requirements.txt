@@ -1,16 +1,11 @@
-streamlit
 langchain
 langchain-community
 langchain-core
 langchain-huggingface
-langchain-pinecone
 langchain-groq
-langchain-docling
-pinecone-client
 transformers
 sentence-transformers
 pytz
-docling
 ipython
 pillow
 langgraph
