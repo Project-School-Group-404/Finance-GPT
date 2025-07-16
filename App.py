@@ -115,7 +115,7 @@ def chat_endpoint(request: QueryRequest):
                         "I apologize, but I couldn't generate a proper response.")
 
         try:
-            requests.post("http://localhost:3000/api/chat", json={
+            requests.post("https://backend-172789587838.asia-south1.run.app/api/chat", json={
                 "userId": request.userId,
                 "userMessage": request.message,
                 "assistantReply": response

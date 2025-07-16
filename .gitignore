@@ -11,3 +11,4 @@ __pycache__
 
 /generated/prisma
 node_modules
+faiss_cache

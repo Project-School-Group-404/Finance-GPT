@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Full-stack FGPT application",
   "scripts": {
-    "start": "concurrently \"npm run server:server\" \"npm run client:dev\"",
+    "start": "concurrently \"npm run client:dev\"",
     "server:server": "cd server && npm run server",
     "client:dev": "cd client && npm run dev",
     "server:start": "cd server && npm start",

@@ -128,7 +128,7 @@ def setup_rag_system(file_path: str):
 
     return vector_store
     
-setup_rag_system("microsoftFY 2024.pdf")
+# setup_rag_system("microsoftFY 2024.pdf")
 
 @tool 
 def rag_qa_tool(query: str) -> str:

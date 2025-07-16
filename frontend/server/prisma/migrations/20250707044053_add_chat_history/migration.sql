@@ -1,4 +1,4 @@
--- CreateTable
+npm run client:dev-- CreateTable
 CREATE TABLE "Chat" (
     "id" SERIAL NOT NULL,
     "userMessage" TEXT NOT NULL,

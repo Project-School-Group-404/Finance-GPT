@@ -23,7 +23,7 @@ function Dashboard({ user, onLogout }) {
 
     const loadChatHistory = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/api/chats/${user.id}`)
+            const response = await fetch(`https://backend-172789587838.asia-south1.run.app/api/chats/${user.id}`)
             const data = await response.json()
 
             if (response.ok && data.chats && data.chats.length > 0) {
