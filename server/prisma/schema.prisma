@@ -16,7 +16,8 @@ model User {
   id        Int     @id @default(autoincrement())
   email     String  @unique
   name      String?
-  password  String
+  password  String?
+  provider  String? @default("local") // 'local', 'google', etc.
   createdAt DateTime @default(now())
   chats     Chat[]  
 }

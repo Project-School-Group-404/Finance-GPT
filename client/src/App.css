@@ -77,6 +77,12 @@
     }
 }
 
+/* Typewriter cursor animation */
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
 /* Smooth greeting transition styles */
 .greeting-container {
     transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
@@ -565,6 +571,57 @@ html {
     background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border-color) 50%, var(--bg-secondary) 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
+}
+
+/* AI message styling */
+.ai-message {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.ai-message-content {
+    line-height: 1.6;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.ai-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.ai-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+/* User message styling improvements */
+.user-message {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    max-width: 65%;
+}
+
+/* Message spacing */
+.message-container {
+    margin-bottom: 1.5rem;
+}
+
+.message-container:last-child {
+    margin-bottom: 0;
 }
 
 @keyframes loading {

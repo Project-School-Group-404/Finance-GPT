@@ -4,6 +4,7 @@ import Login from './components/login'
 import Signup from './components/signup'
 import Dashboard from './components/dashboard'
 import LandingPage from './components/LandingPage'
+import AuthSuccess from './components/AuthSuccess'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import './App.css'
 
@@ -102,6 +103,8 @@ function App() {
                             <Navigate to="/login" replace />
                         } 
                     />
+                    
+                    <Route path="/auth/success" element={<AuthSuccess />} />
                     
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

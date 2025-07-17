@@ -17,3 +17,8 @@ boto3
 unstract
 llmwhisperer-client
 faiss-cpu
+fastapi
+uvicorn
+python-multipart
+python-dotenv
+langchain-ollama

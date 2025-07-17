@@ -1,14 +1,15 @@
 import express from 'express';
-// import session from 'express-session';
+import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import passport from 'passport';
+import passport from './config/passport.js';
 import prisma from './config/database.js';
 import routes from './routes/index.js';
 import { config } from './config/config.js';
 import { databaseService } from './services/databaseService.js';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware/errorHandler.js';
 
+import authRoutes from './routes/authRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -23,9 +24,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Session middleware
+app.use(session(config.session));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // API Routes
 app.use('/api', routes);
+
+// Add separate auth route to match Google Console redirect URI
+app.use('/auth', authRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

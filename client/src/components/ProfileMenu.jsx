@@ -14,7 +14,9 @@ function ProfileMenu({ showProfileMenu, handleMouseEnter, handleMouseLeave, onSe
             console.error("Logout error:", error);
         } finally {
             // Clear any stored user data
-            localStorage.removeItem('user');
+            localStorage.removeItem('fgpt_user');
+            localStorage.removeItem('fgpt_isLoggedIn');
+            localStorage.removeItem('authToken');
             sessionStorage.clear();
             
             // Use parent component's logout handler if available

@@ -13,24 +13,18 @@ router.use('/health', healthRoutes);
 
 
 // Legacy routes for backward compatibility
-router.use('/users', (req, res, next) => {
-    // Redirect /api/users to /api/auth/register
-    if (req.method === 'POST') {
-        req.url = '/register';
-        authRoutes(req, res, next);
-    } else {
-        res.status(404).json({ error: 'Route not found' });
-    }
+router.post('/login', (req, res, next) => {
+    // Forward login request to auth route
+    req.url = '/auth/login';
+    req.originalUrl = req.originalUrl.replace('/api/login', '/api/auth/login');
+    next();
 });
 
-router.use('/login', (req, res, next) => {
-    // Redirect /api/login to /api/auth/login
-    if (req.method === 'POST') {
-        req.url = '/login';
-        authRoutes(req, res, next);
-    } else {
-        res.status(404).json({ error: 'Route not found' });
-    }
+router.post('/users', (req, res, next) => {
+    // Forward user registration to auth route
+    req.url = '/auth/register';
+    req.originalUrl = req.originalUrl.replace('/api/users', '/api/auth/register');
+    next();
 });
 
 // For backward compatibility with /api/chats/:userId
