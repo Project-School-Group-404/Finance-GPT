@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import Login from './components/login'
-import Signup from './components/signup'
-import Dashboard from './components/dashboard'
-import LandingPage from './components/LandingPage'
-import { ThemeProvider } from './contexts/ThemeContext.jsx'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/login';
+import Signup from './components/signup';
+import Dashboard from './components/dashboard';
+import LandingPage from './components/LandingPage';
+import AuthSuccess from './components/AuthSuccess';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
+import Team from './components/Team';
+import ChatPage from './pages/ChatPage'; // ✅ Chat wrapper for UnifiedChatInterface
+
+import './App.css';
 
 function App() {
     const [user, setUser] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Check for existing user session on app load
     useEffect(() => {
         const checkUserSession = () => {
             try {
@@ -103,6 +106,18 @@ function App() {
                         } 
                     />
                     
+                    <Route path="/auth/success" element={<AuthSuccess />} />
+                    <Route path="/team" element={<Team />} />
+
+                    <Route 
+                        path="/chat"
+                        element={
+                            isLoggedIn ? 
+                            <ChatPage user={user} isLoggedIn={isLoggedIn} /> : 
+                            <Navigate to="/login" replace />
+                        }
+                    />
+                    
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Router>
@@ -110,4 +125,4 @@ function App() {
     )
 }
 
-export default App
+export default App;

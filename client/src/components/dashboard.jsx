@@ -3,6 +3,7 @@ import Header from './Header'
 import ChatInput from './ChatInput'
 import ChatArea from './ChatArea'
 import SettingsModal from './SettingsModal'
+import BackButton from './BackButton'
 import useUserData from '../hooks/useUserData'
 
 function Dashboard({ user, onLogout }) {

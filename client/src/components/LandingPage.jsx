@@ -1,17 +1,25 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { Link, useNavigate } from 'react-router-dom';
+import BackButton from './BackButton';
 
 export default function LandingPage() {
     const { theme, toggleTheme } = useTheme();
     const [isVisible, setIsVisible] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         setIsVisible(true);
     }, []);
 
     const handleGetStarted = () => {
-        // Open /login route in a new tab
-        window.open('/login', '_blank');
+        // Check if user is already logged in
+        const isLoggedIn = localStorage.getItem('fgpt_isLoggedIn') === 'true';
+        if (isLoggedIn) {
+            navigate('/dashboard');
+        } else {
+            navigate('/login');
+        }
     };
 
     const features = [
@@ -39,57 +47,56 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+            {/* Back Button */}
+            <BackButton />
+            
             {/* Navigation Bar */}
             <nav className="fixed top-0 w-full z-50 nav-backdrop border-b" 
                  style={{ 
                      backgroundColor: `${theme === 'dark' ? 'rgba(17, 17, 17, 0.8)' : 'rgba(255, 255, 255, 0.8)'}`,
                      borderColor: 'var(--border-color)'
                  }}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        {/* Logo */}
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xl font-bold">FinanceGPT</span>
-                        </div>
-
-                        {/* Navigation Links */}
-                        <div className="hidden md:flex items-center space-x-8">
-                            <a href="#features" className="hover:opacity-80 transition-opacity cursor-pointer">Features</a>
-                            <a href="#about" className="hover:opacity-80 transition-opacity cursor-pointer">About</a>
-                            <a href="#documentation" className="hover:opacity-80 transition-opacity cursor-pointer">Documentation</a>
-                            <a href="#team" className="hover:opacity-80 transition-opacity cursor-pointer">Team</a>
-                        </div>
-
-                        {/* Theme Toggle & Get Started */}
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-lg transition-colors hover:opacity-80"
-                                style={{ backgroundColor: 'var(--bg-secondary)' }}
-                            >
-                                {theme === 'dark' ? '☀️' : '🌙'}
-                            </button>
-                            <button
-                                onClick={handleGetStarted}
-                                className="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 hover:shadow-lg"
-                                style={{ 
-                                    backgroundColor: 'var(--accent-primary)', 
-                                    color: 'white',
-                                    boxShadow: 'var(--shadow-md)'
-                                }}
-                            >
-                                Get Started
-                            </button>
-                        </div>
-                    </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+                <div className="flex items-center space-x-2">
+                    <span className="text-xl font-bold">FinanceGPT</span>
                 </div>
-            </nav>
+
+                <div className="hidden md:flex items-center space-x-8">
+                    <a href="#features" className="hover:opacity-80 transition-opacity cursor-pointer">Features</a>
+                    <a href="#about" className="hover:opacity-80 transition-opacity cursor-pointer">About</a>
+                    <a href="#documentation" className="hover:opacity-80 transition-opacity cursor-pointer">Documentation</a>
+                    <Link to="/team" className="hover:opacity-80 transition-opacity cursor-pointer">Team</Link>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-lg transition-colors hover:opacity-80"
+                        style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    >
+                        {theme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <button
+                        onClick={handleGetStarted}
+                        className="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 hover:shadow-lg"
+                        style={{ 
+                            backgroundColor: 'var(--accent-primary)', 
+                            color: 'white',
+                            boxShadow: 'var(--shadow-md)'
+                        }}
+                    >
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
             {/* Hero Section */}
             <section className={`min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 <div className="max-w-7xl mx-auto text-center">
                     <div className="relative">
-                        {/* Background Gradient */}
                         <div className="absolute inset-0 -z-10">
                             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 rounded-full opacity-20 blur-3xl"
                                  style={{ backgroundColor: 'var(--accent-primary)' }}></div>
@@ -97,17 +104,13 @@ export default function LandingPage() {
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-12 leading-tight landing-hero">
                             <span className="block">Frontier AI.</span>
-                            <span className="block gradient-text">
-                                In Your Hands.
-                            </span>
+                            <span className="block gradient-text">In Your Hands.</span>
                         </h1>
 
                         <p className="text-xl md:text-2xl mb-16 max-w-3xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-                            Configurable AI for all financial builders. Harness the power of artificial intelligence 
-                            to revolutionize your financial decision-making.
+                            Configurable AI for all financial builders. Harness the power of artificial intelligence to revolutionize your financial decision-making.
                         </p>
 
-                        {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <button
                                 onClick={handleGetStarted}
@@ -121,7 +124,6 @@ export default function LandingPage() {
                                 Try out FinanceGPT →
                             </button>
                         </div>
-
                     </div>
                 </div>
             </section>
@@ -152,9 +154,7 @@ export default function LandingPage() {
                             >
                                 <div className="text-4xl mb-4 floating-element">{feature.icon}</div>
                                 <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                                <p style={{ color: 'var(--text-secondary)' }}>
-                                    {feature.description}
-                                </p>
+                                <p style={{ color: 'var(--text-secondary)' }}>{feature.description}</p>
                             </div>
                         ))}
                     </div>
@@ -229,13 +229,13 @@ export default function LandingPage() {
                             <h4 className="font-semibold mb-4">Resources</h4>
                             <ul className="space-y-2">
                                 <li><a href="#documentation" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>Documentation</a></li>
-                                <li><a href="#team" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>Team</a></li>
+                                <li><Link to="/team" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>Team</Link></li>
                             </ul>
                         </div>
                         <div>
                             <h4 className="font-semibold mb-4">Company</h4>
                             <ul className="space-y-2">
-                                <li><a href="#team" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>About Us</a></li>
+                                <li><Link to="/team" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>About Us</Link></li>
                                 <li><a href="#contact" className="hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>Contact</a></li>
                             </ul>
                         </div>
