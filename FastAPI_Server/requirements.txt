@@ -18,3 +18,4 @@ unstract
 llmwhisperer-client
 faiss-cpu
 langchain_ollama
+mem0ai

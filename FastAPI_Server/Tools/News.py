@@ -96,19 +96,20 @@
 
 import os
 from langchain_core.tools import tool
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage,AIMessage,BaseMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from tavily import TavilyClient
 from dotenv import load_dotenv
 from pprint import pprint
 import trafilatura
-
+from typing import List, Union
 load_dotenv()
 
 tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
 @tool
-def financial_news_search(query: str) -> str:
+def financial_news_search(query: str,dependency_context: str = "",
+    message_history: List[Union[AIMessage, HumanMessage]] = [],) -> str:
     """
     This tool is used to answer queries which needs latest news feed.
     Uses LLM to intelligently formulate search queries from concatenated query+context strings.
@@ -118,13 +119,31 @@ def financial_news_search(query: str) -> str:
     """
     print("news tool invoked")
     llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
-    
+    def format_history(history: List[BaseMessage]) -> str:
+        """Format message history into a string for model input."""
+        formatted = ""
+        for msg in history[-5:]:
+            role = "User" if isinstance(msg, HumanMessage) else "Assistant"
+            formatted += f"{role}: {msg.content}\n"
+        return formatted.strip()
+
+    history_str = format_history(message_history)
     try:
         # Step 1: Use LLM to intelligently formulate the search query
-        print(f"Input query (with context): {query}")
+        question  = f"""
+    Original User Query:
+    {query}
+
+    --- Dependency Context ---
+    {dependency_context}
+
+    --- Prior History ---
+    {history_str}
+    """
+
         
         query_formulation_prompt = SystemMessage(content="""
-You are an expert financial research assistant. Your task is to analyze the given input (which may contain both a query and context from previous analysis) and generate an optimized search query for financial news.
+You are an expert financial research assistant. Your task is to analyze the given input (which may contain both a query , context from previous tools ,prevoious conversation history) and generate an optimized search query for financial news.
 
 The input may be in formats like:
 - "what is the current price of solana?"
@@ -145,7 +164,7 @@ Output only the optimized search query - no explanations or additional text.
         
         query_formulation_messages = [
             query_formulation_prompt,
-            HumanMessage(content=query)
+            HumanMessage(content=question)
         ]
         
         optimized_query = llm.invoke(query_formulation_messages).content.strip()
@@ -258,9 +277,9 @@ Be concise and direct - focus on what matters most for financial decision-making
         return error_msg
 
 # Example usage with concatenated context
-print(financial_news_search.invoke({
-    "query": "what is the current price of solana? Context: Previous analysis showed interest in cryptocurrency market trends and DeFi sector growth"
-}))
+# print(financial_news_search.invoke({
+#     "query": "what is the current price of solana? Context: Previous analysis showed interest in cryptocurrency market trends and DeFi sector growth"
+# }))
 
 # Example of how Router might call this with concatenated context
 # query_with_context = f"sector analysis based on: {document_qna_output}"
