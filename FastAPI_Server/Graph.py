@@ -3,13 +3,25 @@ from typing import Dict, List, Any
 from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, AnyMessage
+from langchain_core.messages import (
+    HumanMessage,
+    SystemMessage,
+    AIMessage,
+    AnyMessage,
+    BaseMessage,
+)
 from langgraph.graph import StateGraph, START, END
+
+# from langgraph.checkpoint.redis import RedisSaver
 from IPython.display import Image, display
+from typing import Annotated
+from typing import Any
+import operator
 import json
 import os
 import re
 from dotenv import load_dotenv
+
 load_dotenv()
 # tools
 from Tools.Doc_QnA_RAG import rag_qa_tool
@@ -21,6 +33,7 @@ from Tools.prompt import ROUTER_PROMPT
 
 
 from mem0 import MemoryClient
+
 memory = MemoryClient()
 
 
@@ -33,11 +46,12 @@ class GraphState(TypedDict, total=False):
     current_agent_index: int
     processed_agents: List[str]
     agent_outputs: Dict[str, str]
+    messages_added: bool
     final_response: str
     user_id: str
     session_id: str
-    messages: List[AnyMessage]
-    combined_memory_context: str
+    messages: Annotated[List[AnyMessage], operator.add]
+    past_memory: str
 
 
 llm = ChatGoogleGenerativeAI(
@@ -45,7 +59,19 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
-def load_memory(state: Dict[str, Any]) -> Dict[str, Any]:
+llm.invoke("hi")
+
+
+def format_history(history: List[BaseMessage]) -> str:
+    """Format message history into a string for model input."""
+    formatted = ""
+    for msg in history[-5:]:
+        role = "User" if isinstance(msg, HumanMessage) else "Assistant"
+        formatted += f"{role}: {msg.content}\n"
+    return formatted.strip()
+
+
+def load_memory(state: GraphState) -> GraphState:
     """
     Loads summarized memory and full conversation (if stored) for the given user/session
     from Mem0, and prepares messages for router usage.
@@ -56,7 +82,7 @@ def load_memory(state: Dict[str, Any]) -> Dict[str, Any]:
     all_memories = memory.get_all(user_id=user_id)
 
     if not all_memories:
-        state["combined_memory_context"] = "This is a fresh conversation"
+        state["past_memory"] = "This is a fresh conversation"
         return state
 
     session_memories = [
@@ -82,18 +108,23 @@ def load_memory(state: Dict[str, Any]) -> Dict[str, Any]:
         ]
     )
 
-    state["combined_memory_context"] = combined_context
+    state["past_memory"] = combined_context
     return state
 
 
-def Router(state: Dict[str, Any]) -> Dict[str, Any]:
+def Router(state: GraphState) -> GraphState:
     try:
         query = state["input"]
+        previous_memory = state.get("past_memory", "")
+
+        history = format_history(state["messages"][-10:])
+
+        final_query = f"User Query: {query}\n\n Conversation History:\n{history}\n\n Summarized Memory:\n{previous_memory}\n"
 
         # print("query received")
         messages = [
             SystemMessage(content=ROUTER_PROMPT),
-            HumanMessage(content=f"Query: {query}"),
+            HumanMessage(content=f"Query: {final_query}"),
         ]
         # print("query structured")
 
@@ -133,7 +164,7 @@ def Router(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def route_to_agents(state: Dict[str, Any]) -> str:
+def route_to_agents(state: GraphState) -> GraphState:
     agent_order = state.get(
         "agent_order",
         [{"name": "General_qna", "query": f"{state["input"]}", "dependencies": []}],
@@ -151,7 +182,7 @@ def route_to_agents(state: Dict[str, Any]) -> str:
     return "Aggregator"
 
 
-def Document_qna(state: Dict[str, Any]) -> Dict[str, Any]:
+def Document_qna(state: GraphState) -> GraphState:
     try:
         query = state["agent_order"][state["current_agent_index"]]["query"]
         dependencies_list = state["agent_order"][state["current_agent_index"]][
@@ -192,7 +223,7 @@ def Document_qna(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def News(state: Dict[str, Any]) -> Dict[str, Any]:
+def News(state: GraphState) -> GraphState:
     try:
         query = state["agent_order"][state["current_agent_index"]]["query"]
         print(query)
@@ -229,7 +260,7 @@ def News(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def General_qna(state: Dict[str, Any]) -> Dict[str, Any]:
+def General_qna(state: GraphState) -> GraphState:
     try:
         query = state["agent_order"][state["current_agent_index"]]["query"]
         dependencies_list = state["agent_order"][state["current_agent_index"]][
@@ -264,7 +295,7 @@ def General_qna(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def Image_qna(state: Dict[str, Any]) -> Dict[str, Any]:
+def Image_qna(state: GraphState) -> GraphState:
     try:
         query = state["agent_order"][state["current_agent_index"]]["query"]
         dependencies_list = state["agent_order"][state["current_agent_index"]][
@@ -303,7 +334,7 @@ def Image_qna(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def Refiner(state: Dict[str, Any]) -> Dict[str, Any]:
+def Refiner(state: GraphState) -> GraphState:
     try:
         query = state["agent_order"][state["current_agent_index"]]["query"]
         dependencies_list = state["agent_order"][state["current_agent_index"]][
@@ -338,11 +369,13 @@ def Refiner(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def Aggregator(state: Dict[str, Any]) -> Dict[str, Any]:
+def Aggregator(state: GraphState) -> GraphState:
     try:
         final_agent_outputs = state["agent_outputs"]
         routing_reasoning = state.get("routing_reasoning", "")
         initial_query = state["input"]
+        previous_memory = state.get("past_memory", "")
+        history = format_history(state["messages"][-10:])
 
         if not final_agent_outputs:
             state["final_response"] = "No agent outputs to aggregate."
@@ -354,7 +387,7 @@ def Aggregator(state: Dict[str, Any]) -> Dict[str, Any]:
 
         else:
             aggregation_prompt = f"""
-                        You are an expert output aggregator. Given the initial query , Combine the following responses into a coherent, comprehensive answer , also if needed take into consideration the previous converstation history to answer the initial_query.
+                        You are an expert output aggregator. along with the intial query you maybe given the responses from the tools, previous conversation history and past memories related to the user, Combine them into a coherent, comprehensive answer , also if needed take into consideration the previous converstation history to answer the initial_query.
                         
                         initial query : {initial_query}
                         Routing reasoning: {routing_reasoning}
@@ -362,7 +395,10 @@ def Aggregator(state: Dict[str, Any]) -> Dict[str, Any]:
                         Responses:
                         {json.dumps(final_agent_outputs, indent=2)}
 
-                        Conversation history: {json.dumps([msg.dict() for msg in state["messages"]], indent=2)}
+
+                        Conversation history: {history}
+
+                        past memories : {previous_memory}
                         Create a unified response that integrates insights from all the responses and the conversation history if needed, while avoiding redundancy.
             
                         """
@@ -375,15 +411,22 @@ def Aggregator(state: Dict[str, Any]) -> Dict[str, Any]:
 
             response = llm(messages)
             state["final_response"] = response.content
-            state["messages"].append(HumanMessage(content=state["input"]))
-            state["messages"].append(AIMessage(content=state["final_response"]))
+
     except Exception as e:
         print(f"Error in Aggregation : {e}")
 
     return state
 
 
-def save_memory(state: Dict[str, Any]) -> Dict[str, Any]:
+def add_to_messages(state: GraphState) -> GraphState:
+    if not state.get("messages_added", False):
+        state["messages"].append(HumanMessage(content=state["input"]))
+        state["messages"].append(AIMessage(content=state["final_response"]))
+        state["messages_added"] = True
+    return state
+
+
+def save_memory(state: GraphState) -> GraphState:
     """
     Save the user input and final AI response to memory, including full conversation metadata.
     Should be called after final response is generated.
@@ -417,7 +460,7 @@ def save_memory(state: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def buildGraph():
+def BuildGraph(Checkpointer: Any) -> Any:
     builder = StateGraph(GraphState)
 
     builder.add_node("load_memory", load_memory)
@@ -429,8 +472,9 @@ def buildGraph():
 
     builder.add_node("Image_qna", Image_qna)
     builder.add_node("Aggregator", Aggregator)
-    builder.add_node("save_memory", save_memory)
+    builder.add_node("add_to_messages", add_to_messages)
 
+    builder.add_node("save_memory", save_memory)
 
     # builder.set_entry_point("load_memory")
 
@@ -467,10 +511,12 @@ def buildGraph():
 
     builder.add_conditional_edges("Refiner", route_to_agents, routing_map)
 
-    builder.add_edge("Aggregator", "save_memory")
+    builder.add_edge("Aggregator", "add_to_messages")
+
+    builder.add_edge("add_to_messages", "save_memory")
 
     builder.add_edge("save_memory", END)
 
-    graph = builder.compile()
+    graph = builder.compile(checkpointer=Checkpointer)
 
     return graph

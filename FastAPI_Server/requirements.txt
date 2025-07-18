@@ -19,3 +19,13 @@ llmwhisperer-client
 faiss-cpu
 langchain_ollama
 mem0ai
+langgraph-checkpoint-redis
+fastapi
+uvicorn
+redis
+google-cloud-storage==2.10.0
+python-multipart==0.0.6
+pydantic==2.5.0
+python-dotenv==1.0.0
+gunicorn
+

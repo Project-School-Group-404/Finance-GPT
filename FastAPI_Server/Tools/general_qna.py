@@ -25,7 +25,7 @@ def gen_qna(question: str, dependency_context: str = "",
     def format_history(history: List[BaseMessage]) -> str:
             """Format message history into a string for model input."""
             formatted = ""
-            for msg in history[-5:]:
+            for msg in history[-10:]:
                 role = "User" if isinstance(msg, HumanMessage) else "Assistant"
                 formatted += f"{role}: {msg.content}\n"
             return formatted.strip()
