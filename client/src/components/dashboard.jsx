@@ -119,6 +119,7 @@ function Dashboard({ user, onLogout }) {
                 const data = await response.json();
 
                 if (response.ok) {
+                    // Display AI response to user immediately
                     const botResponse = {
                         id: Date.now() + 1,
                         text: data.reply,
@@ -127,6 +128,36 @@ function Dashboard({ user, onLogout }) {
                         timestamp: new Date()
                     };
                     setMessages(prev => [...prev, botResponse]);
+
+                    // Save conversation to Node.js database
+                    try {
+                        const saveResponse = await fetch("http://localhost:3000/api/chat/ai", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                userMessage: messageText,
+                                assistantReply: data.reply,
+                                userId: user.id,
+                                documentName: file?.name || null,
+                                documentType: file?.type || file?.name?.split('.').pop() || null,
+                                documentPath: file ? `uploads/${file.name}` : null,
+                                documentSize: file?.size || null
+                            })
+                        });
+
+                        if (saveResponse.ok) {
+                            const saveResult = await saveResponse.json();
+                            console.log("Chat saved successfully:", saveResult);
+                        } else {
+                            console.error("Failed to save chat to database");
+                        }
+                    } catch (saveError) {
+                        console.error("Error saving chat:", saveError);
+                        // Note: Don't show error to user since chat still works
+                    }
+
                 } else {
                     setMessages(prev => [...prev, {
                         id: Date.now() + 1,

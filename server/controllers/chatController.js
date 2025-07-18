@@ -1,5 +1,4 @@
 import prisma from '../config/database.js';
-import { config } from '../config/config.js';
 
 export const chatController = {
     // Save chat message
@@ -48,9 +47,6 @@ export const chatController = {
             const chat = await prisma.chat.create({
                 data: chatData
             });
-
-            // Enforce chat history limit
-            await chatController.enforceChatLimit(parseInt(userId));
 
             res.status(201).json({ 
                 message: 'Chat saved successfully',
@@ -113,11 +109,12 @@ export const chatController = {
         }
     },
 
-    // AI chat endpoint
+    // AI chat endpoint - saves chat data from FastAPI server
     aiChat: async (req, res) => {
         try {
             const { 
-                message, 
+                userMessage,
+                assistantReply,
                 userId, 
                 documentName, 
                 documentType, 
@@ -126,17 +123,14 @@ export const chatController = {
             } = req.body;
 
             // Validation
-            if (!message || !userId) {
-                return res.status(400).json({ error: 'Message and user ID are required' });
+            if (!userMessage || !assistantReply || !userId) {
+                return res.status(400).json({ error: 'User message, assistant reply, and user ID are required' });
             }
-
-            // Simple response (integrate with actual AI service later)
-            const assistantReply = `You said: "${message}". This is a simple echo response. You can integrate with OpenAI API or other AI services here.`;
 
             // Save to database with document information
             const chat = await prisma.chat.create({
                 data: {
-                    userMessage: message,
+                    userMessage,
                     assistantReply,
                     userId: parseInt(userId),
                     documentName: documentName || null,
@@ -147,38 +141,14 @@ export const chatController = {
                 }
             });
 
-            // Enforce chat history limit
-            await chatController.enforceChatLimit(parseInt(userId));
-
             res.json({ 
-                reply: assistantReply,
+                message: 'Chat saved successfully',
                 chatId: chat.id
             });
 
         } catch (error) {
             console.error('AI chat error:', error);
             res.status(500).json({ error: 'Internal server error' });
-        }
-    },
-
-    // Helper function to enforce chat limit per user
-    enforceChatLimit: async (userId) => {
-        try {
-            const chats = await prisma.chat.findMany({
-                where: { userId },
-                orderBy: { id: 'desc' },
-                skip: config.chat.maxHistoryPerUser,
-            });
-
-            // Delete older chats if more than limit
-            const idsToDelete = chats.map((chat) => chat.id);
-            if (idsToDelete.length > 0) {
-                await prisma.chat.deleteMany({
-                    where: { id: { in: idsToDelete } },
-                });
-            }
-        } catch (error) {
-            console.error('Enforce chat limit error:', error);
         }
     }
 };

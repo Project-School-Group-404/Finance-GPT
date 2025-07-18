@@ -11,9 +11,6 @@ export const config = {
     bcrypt: {
         saltRounds: 10
     },
-    chat: {
-        maxHistoryPerUser: 10
-    },
     google: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,

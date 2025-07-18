@@ -28,6 +28,7 @@ model Chat {
   assistantReply String
   userId         Int
   user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
   
   // Document fields - will be null if no document uploaded
   documentName   String?  // original filename

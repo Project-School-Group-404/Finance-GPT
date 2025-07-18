@@ -4,6 +4,7 @@ import Login from './components/login'
 import Signup from './components/signup'
 import Dashboard from './components/dashboard'
 import LandingPage from './components/LandingPage'
+import TeamSection from './components/Team'
 import AuthSuccess from './components/AuthSuccess'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import './App.css'
@@ -69,6 +70,7 @@ function App() {
             <Router>
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
+                    <Route path="/team" element={<TeamSection />} />
                     
                     <Route 
                         path="/login" 

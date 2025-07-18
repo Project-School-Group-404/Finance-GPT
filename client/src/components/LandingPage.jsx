@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import Navbar from './Navbar';
 
 export default function LandingPage() {
     const { theme, toggleTheme } = useTheme();
@@ -40,50 +41,7 @@ export default function LandingPage() {
     return (
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
             {/* Navigation Bar */}
-            <nav className="fixed top-0 w-full z-50 nav-backdrop border-b" 
-                 style={{ 
-                     backgroundColor: `${theme === 'dark' ? 'rgba(17, 17, 17, 0.8)' : 'rgba(255, 255, 255, 0.8)'}`,
-                     borderColor: 'var(--border-color)'
-                 }}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        {/* Logo */}
-                        <div className="flex items-center space-x-2">
-                            <span className="text-xl font-bold">FinanceGPT</span>
-                        </div>
-
-                        {/* Navigation Links */}
-                        <div className="hidden md:flex items-center space-x-8">
-                            <a href="#features" className="hover:opacity-80 transition-opacity cursor-pointer">Features</a>
-                            <a href="#about" className="hover:opacity-80 transition-opacity cursor-pointer">About</a>
-                            <a href="#documentation" className="hover:opacity-80 transition-opacity cursor-pointer">Documentation</a>
-                            <a href="#team" className="hover:opacity-80 transition-opacity cursor-pointer">Team</a>
-                        </div>
-
-                        {/* Theme Toggle & Get Started */}
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-lg transition-colors hover:opacity-80"
-                                style={{ backgroundColor: 'var(--bg-secondary)' }}
-                            >
-                                {theme === 'dark' ? '☀️' : '🌙'}
-                            </button>
-                            <button
-                                onClick={handleGetStarted}
-                                className="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 hover:shadow-lg"
-                                style={{ 
-                                    backgroundColor: 'var(--accent-primary)', 
-                                    color: 'white',
-                                    boxShadow: 'var(--shadow-md)'
-                                }}
-                            >
-                                Get Started
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <Navbar />
 
             {/* Hero Section */}
             <section className={`min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
