@@ -4,36 +4,40 @@ function ChatInput({ inputValue, setInputValue, uploadedFile, setUploadedFile, o
     const fileInputRef = useRef(null)
 
     const handleSendMessage = () => {
-        if (!inputValue.trim() && !uploadedFile) return;
+        const hasFiles = uploadedFile && (Array.isArray(uploadedFile) ? uploadedFile.length > 0 : uploadedFile);
+        if (!inputValue.trim() && !hasFiles) return;
         if (isLoading) return; // Prevent sending while loading
 
         const messageText = inputValue.trim();
-        const file = uploadedFile;
+        const files = uploadedFile;
 
         // Call parent callback to add message to chat
         if (onSendMessage) {
-            onSendMessage(messageText, file);
+            onSendMessage(messageText, files);
         }
 
-        // Clear input and uploaded file after sending
+        // Clear input and uploaded files after sending
         setInputValue('');
         setUploadedFile(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
-        // Clear persisted file
+        // Clear persisted files
         if (onFileChange) {
             onFileChange(null);
         }
     }
 
     const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setUploadedFile(file);
-            // Persist file to localStorage
+        const files = Array.from(event.target.files);
+        if (files.length > 0) {
+            // If there are existing files, append to them, otherwise create new array
+            const existingFiles = Array.isArray(uploadedFile) ? uploadedFile : (uploadedFile ? [uploadedFile] : []);
+            const allFiles = [...existingFiles, ...files];
+            setUploadedFile(allFiles);
+            // Persist files to localStorage
             if (onFileChange) {
-                onFileChange(file);
+                onFileChange(allFiles);
             }
         }
     }
@@ -49,46 +53,131 @@ function ChatInput({ inputValue, setInputValue, uploadedFile, setUploadedFile, o
         }
     }
 
+    const removeFile = (indexToRemove) => {
+        if (Array.isArray(uploadedFile)) {
+            const updatedFiles = uploadedFile.filter((_, index) => index !== indexToRemove);
+            if (updatedFiles.length === 0) {
+                setUploadedFile(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                if (onFileChange) {
+                    onFileChange(null);
+                }
+            } else {
+                setUploadedFile(updatedFiles);
+                if (onFileChange) {
+                    onFileChange(updatedFiles);
+                }
+            }
+        } else {
+            // Single file case (for backward compatibility)
+            setUploadedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            if (onFileChange) {
+                onFileChange(null);
+            }
+        }
+    }
+
+    const clearAllFiles = () => {
+        setUploadedFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        if (onFileChange) {
+            onFileChange(null);
+        }
+    }
+
     return (
         <div className="p-6">
             <div className="max-w-4xl mx-auto">
                 {/* File upload preview */}
                 {uploadedFile && (
                     <div className="mb-4 p-3 rounded-lg" style={{backgroundColor: 'var(--bg-secondary)'}}>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <svg className="w-5 h-5" style={{color: 'var(--accent-primary)'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span className="text-sm" style={{color: 'var(--text-primary)'}}>
-                                    {uploadedFile.name}
-                                    {uploadedFile.isPersisted && (
-                                        <span className="ml-2 text-xs" style={{color: 'var(--accent-primary)'}}>(restored)</span>
-                                    )}
-                                </span>
-                                <span className="text-sm" style={{color: 'var(--text-secondary)'}}>({(uploadedFile.size / 1024).toFixed(1)} KB)</span>
+                        {Array.isArray(uploadedFile) ? (
+                            // Multiple files display
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium" style={{color: 'var(--text-primary)'}}>
+                                        Uploaded files ({uploadedFile.length})
+                                    </span>
+                                    <button 
+                                        onClick={clearAllFiles}
+                                        className="text-xs px-2 py-1 rounded transition-colors"
+                                        style={{
+                                            color: 'var(--text-secondary)',
+                                            backgroundColor: 'var(--hover-bg)'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                                        onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                                        title="Clear all files"
+                                    >
+                                        Clear all
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    {uploadedFile.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between p-2 rounded" style={{backgroundColor: 'var(--hover-bg)'}}>
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4" style={{color: 'var(--accent-primary)'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span className="text-sm" style={{color: 'var(--text-primary)'}}>
+                                                    {file.name}
+                                                    {file.isPersisted && (
+                                                        <span className="ml-2 text-xs" style={{color: 'var(--accent-primary)'}}>(restored)</span>
+                                                    )}
+                                                </span>
+                                                <span className="text-xs" style={{color: 'var(--text-secondary)'}}>({(file.size / 1024).toFixed(1)} KB)</span>
+                                            </div>
+                                            <button 
+                                                onClick={() => removeFile(index)}
+                                                className="transition-colors"
+                                                style={{color: 'var(--text-secondary)'}}
+                                                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                                                title="Remove file"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <button 
-                                onClick={() => {
-                                    setUploadedFile(null);
-                                    if (fileInputRef.current) {
-                                        fileInputRef.current.value = '';
-                                    }
-                                    // Clear persisted file
-                                    if (onFileChange) {
-                                        onFileChange(null);
-                                    }
-                                }}
-                                className="transition-colors"
-                                style={{color: 'var(--text-secondary)'}}
-                                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
-                                onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+                        ) : (
+                            // Single file display (for backward compatibility)
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5" style={{color: 'var(--accent-primary)'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span className="text-sm" style={{color: 'var(--text-primary)'}}>
+                                        {uploadedFile.name}
+                                        {uploadedFile.isPersisted && (
+                                            <span className="ml-2 text-xs" style={{color: 'var(--accent-primary)'}}>(restored)</span>
+                                        )}
+                                    </span>
+                                    <span className="text-sm" style={{color: 'var(--text-secondary)'}}>({(uploadedFile.size / 1024).toFixed(1)} KB)</span>
+                                </div>
+                                <button 
+                                    onClick={() => removeFile(0)}
+                                    className="transition-colors"
+                                    style={{color: 'var(--text-secondary)'}}
+                                    onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -118,6 +207,7 @@ function ChatInput({ inputValue, setInputValue, uploadedFile, setUploadedFile, o
                             onChange={handleFileUpload}
                             className="hidden"
                             accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif"
+                            multiple
                         />
 
                         <input
@@ -142,13 +232,13 @@ function ChatInput({ inputValue, setInputValue, uploadedFile, setUploadedFile, o
                         <div className="flex items-center gap-2 ml-4">
                             <button 
                                 onClick={handleSendMessage}
-                                disabled={(!inputValue.trim() && !uploadedFile) || isLoading}
+                                disabled={(!inputValue.trim() && !(uploadedFile && (Array.isArray(uploadedFile) ? uploadedFile.length > 0 : uploadedFile))) || isLoading}
                                 className={`p-3 rounded-full transition-colors ${
-                                    (!(inputValue.trim() || uploadedFile) || isLoading) ? 'cursor-not-allowed' : ''
+                                    (!(inputValue.trim() || (uploadedFile && (Array.isArray(uploadedFile) ? uploadedFile.length > 0 : uploadedFile))) || isLoading) ? 'cursor-not-allowed' : ''
                                 }`}
                                 style={{
-                                    backgroundColor: (inputValue.trim() || uploadedFile) && !isLoading ? 'var(--accent-primary)' : 'var(--border-color)',
-                                    color: (inputValue.trim() || uploadedFile) && !isLoading ? 'var(--bg-primary)' : 'var(--text-secondary)'
+                                    backgroundColor: (inputValue.trim() || (uploadedFile && (Array.isArray(uploadedFile) ? uploadedFile.length > 0 : uploadedFile))) && !isLoading ? 'var(--accent-primary)' : 'var(--border-color)',
+                                    color: (inputValue.trim() || (uploadedFile && (Array.isArray(uploadedFile) ? uploadedFile.length > 0 : uploadedFile))) && !isLoading ? 'var(--bg-primary)' : 'var(--text-secondary)'
                                 }}
                                 title="Send message"
                             >

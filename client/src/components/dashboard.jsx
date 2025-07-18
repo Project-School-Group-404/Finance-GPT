@@ -30,19 +30,33 @@ function Dashboard({ user, onLogout }) {
             if (response.ok && data.chats && data.chats.length > 0) {
                 const chatMessages = []
                 data.chats.forEach(chat => {
-                    // Create file object if document exists
-                    const documentFile = chat.documentName ? {
-                        name: chat.documentName,
-                        type: chat.documentType,
-                        size: chat.documentSize,
-                        path: chat.documentPath,
-                        uploadedAt: chat.uploadedAt
-                    } : null;
+                    // Handle documents - prioritize new documents JSON field over legacy fields
+                    let documentFiles = null;
+                    
+                    if (chat.documents && Array.isArray(chat.documents)) {
+                        // Use new documents JSON array
+                        documentFiles = chat.documents.map(doc => ({
+                            name: doc.name,
+                            type: doc.type,
+                            size: doc.size,
+                            path: doc.path,
+                            uploadedAt: doc.uploadedAt
+                        }));
+                    } else if (chat.documentName) {
+                        // Fallback to legacy single document format
+                        documentFiles = {
+                            name: chat.documentName,
+                            type: chat.documentType,
+                            size: chat.documentSize,
+                            path: chat.documentPath,
+                            uploadedAt: chat.uploadedAt
+                        };
+                    }
 
                     chatMessages.push({
                         id: `user-${chat.id}`,
                         text: chat.userMessage,
-                        file: documentFile,
+                        file: documentFiles,
                         type: 'user',
                         timestamp: new Date()
                     })
@@ -65,13 +79,16 @@ function Dashboard({ user, onLogout }) {
     const handleSettingsClick = () => setShowSettingsModal(true)
     const handleCloseSettings = () => setShowSettingsModal(false)
 
-    const handleSendMessage = async (messageText, file, type = 'user') => {
+    const handleSendMessage = async (messageText, files, type = 'user') => {
         if (type === 'user') {
+            // Normalize files to always be an array for processing
+            const fileArray = files ? (Array.isArray(files) ? files : [files]) : [];
+            
             // Show user message immediately
             const userMessage = {
                 id: Date.now(),
                 text: messageText,
-                file: file,
+                file: files, // Keep original format for display
                 type: 'user',
                 timestamp: new Date()
             };
@@ -79,18 +96,27 @@ function Dashboard({ user, onLogout }) {
             setIsLoading(true);
 
             try {
-                // ✅ Upload file first if present
-                if (file) {
-                    const formData = new FormData();
-                    formData.append("file", file);
+                // ✅ Upload files first if present
+                const uploadedFiles = [];
+                if (fileArray.length > 0) {
+                    for (const file of fileArray) {
+                        const formData = new FormData();
+                        formData.append("file", file);
 
-                    const uploadResponse = await fetch("http://localhost:8000/upload", {
-                        method: "POST",
-                        body: formData
-                    });
+                        const uploadResponse = await fetch("http://localhost:8000/upload", {
+                            method: "POST",
+                            body: formData
+                        });
 
-                    const uploadResult = await uploadResponse.json();
-                    console.log("Upload result:", uploadResult);
+                        const uploadResult = await uploadResponse.json();
+                        console.log("Upload result:", uploadResult);
+                        uploadedFiles.push({
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            path: `uploads/${file.name}`
+                        });
+                    }
                 }
 
                 // ✅ Then send message to chat endpoint
@@ -100,12 +126,21 @@ function Dashboard({ user, onLogout }) {
                     history: messages.filter(m => m.type !== "system").map(m => m.text)
                 };
 
-                // Add document information if file exists
-                if (file) {
-                    chatRequestBody.documentName = file.name;
-                    chatRequestBody.documentType = file.type || file.name.split('.').pop();
-                    chatRequestBody.documentSize = file.size;
-                    chatRequestBody.documentPath = `uploads/${file.name}`; // This should match your upload path
+                // Add document information if files exist
+                if (uploadedFiles.length > 0) {
+                    // For multiple files, we'll send info about the first file for now
+                    // You might want to modify your backend to handle multiple files
+                    const primaryFile = uploadedFiles[0];
+                    chatRequestBody.documentName = primaryFile.name;
+                    chatRequestBody.documentType = primaryFile.type || primaryFile.name.split('.').pop();
+                    chatRequestBody.documentSize = primaryFile.size;
+                    chatRequestBody.documentPath = primaryFile.path;
+                    
+                    // Add info about additional files
+                    if (uploadedFiles.length > 1) {
+                        chatRequestBody.additionalFiles = uploadedFiles.slice(1);
+                        chatRequestBody.totalFileCount = uploadedFiles.length;
+                    }
                 }
 
                 const response = await fetch("http://localhost:8000/chat", {
@@ -131,6 +166,9 @@ function Dashboard({ user, onLogout }) {
 
                     // Save conversation to Node.js database
                     try {
+                        // For multiple files, save info about the primary file
+                        const primaryFile = fileArray.length > 0 ? fileArray[0] : null;
+                        
                         const saveResponse = await fetch("http://localhost:3000/api/chat/ai", {
                             method: "POST",
                             headers: {
@@ -140,10 +178,17 @@ function Dashboard({ user, onLogout }) {
                                 userMessage: messageText,
                                 assistantReply: data.reply,
                                 userId: user.id,
-                                documentName: file?.name || null,
-                                documentType: file?.type || file?.name?.split('.').pop() || null,
-                                documentPath: file ? `uploads/${file.name}` : null,
-                                documentSize: file?.size || null
+                                documentName: primaryFile?.name || null,
+                                documentType: primaryFile?.type || primaryFile?.name?.split('.').pop() || null,
+                                documentPath: primaryFile ? `uploads/${primaryFile.name}` : null,
+                                documentSize: primaryFile?.size || null,
+                                // Add metadata for multiple files
+                                totalFiles: fileArray.length,
+                                additionalFilesInfo: fileArray.length > 1 ? fileArray.slice(1).map(f => ({
+                                    name: f.name,
+                                    type: f.type,
+                                    size: f.size
+                                })) : null
                             })
                         });
 
@@ -181,40 +226,70 @@ function Dashboard({ user, onLogout }) {
         }
     };
 
-    // Persist uploaded file to localStorage
-    const persistUploadedFile = (file) => {
-        if (file) {
-            const fileData = {
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                lastModified: file.lastModified
+    // Persist uploaded files to localStorage
+    const persistUploadedFile = (files) => {
+        if (files) {
+            if (Array.isArray(files)) {
+                // Multiple files
+                const filesData = files.map(file => ({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    lastModified: file.lastModified
+                }));
+                localStorage.setItem(`fgpt_uploaded_files_${user.id}`, JSON.stringify(filesData));
+            } else {
+                // Single file (backward compatibility)
+                const fileData = {
+                    name: files.name,
+                    type: files.type,
+                    size: files.size,
+                    lastModified: files.lastModified
+                };
+                localStorage.setItem(`fgpt_uploaded_file_${user.id}`, JSON.stringify(fileData));
             }
-            localStorage.setItem(`fgpt_uploaded_file_${user.id}`, JSON.stringify(fileData))
         } else {
-            localStorage.removeItem(`fgpt_uploaded_file_${user.id}`)
+            // Clear both single and multiple file storage
+            localStorage.removeItem(`fgpt_uploaded_file_${user.id}`);
+            localStorage.removeItem(`fgpt_uploaded_files_${user.id}`);
         }
     }
 
-    // Restore uploaded file from localStorage
+    // Restore uploaded files from localStorage
     const restoreUploadedFile = () => {
         try {
-            const storedFileData = localStorage.getItem(`fgpt_uploaded_file_${user.id}`)
+            // Try to restore multiple files first
+            const storedFilesData = localStorage.getItem(`fgpt_uploaded_files_${user.id}`);
+            if (storedFilesData) {
+                const filesData = JSON.parse(storedFilesData);
+                const mockFiles = filesData.map(fileData => ({
+                    name: fileData.name,
+                    type: fileData.type,
+                    size: fileData.size,
+                    lastModified: fileData.lastModified,
+                    isPersisted: true
+                }));
+                setUploadedFile(mockFiles);
+                return;
+            }
+
+            // Fallback to single file for backward compatibility
+            const storedFileData = localStorage.getItem(`fgpt_uploaded_file_${user.id}`);
             if (storedFileData) {
-                const fileData = JSON.parse(storedFileData)
-                // Create a mock file object for display purposes
+                const fileData = JSON.parse(storedFileData);
                 const mockFile = {
                     name: fileData.name,
                     type: fileData.type,
                     size: fileData.size,
                     lastModified: fileData.lastModified,
-                    isPersisted: true // Flag to indicate this is from storage
-                }
-                setUploadedFile(mockFile)
+                    isPersisted: true
+                };
+                setUploadedFile(mockFile);
             }
         } catch (error) {
-            console.error('Error restoring uploaded file:', error)
-            localStorage.removeItem(`fgpt_uploaded_file_${user.id}`)
+            console.error('Error restoring uploaded files:', error);
+            localStorage.removeItem(`fgpt_uploaded_file_${user.id}`);
+            localStorage.removeItem(`fgpt_uploaded_files_${user.id}`);
         }
     }
 

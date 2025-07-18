@@ -30,7 +30,10 @@ model Chat {
   user           User     @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   
-  // Document fields - will be null if no document uploaded
+  // Multiple documents stored as JSON array
+  documents      Json?    // Array of document objects: [{name, type, path, size, uploadedAt}, ...]
+  
+  // Legacy single document fields - kept for backward compatibility
   documentName   String?  // original filename
   documentType   String?  // 'pdf', 'image', 'excel'
   documentPath   String?  // where file is stored

@@ -116,13 +116,34 @@ function ChatArea({ messages }) {
                                         }}>
                                     {message.file && (
                                         <div className="mb-2 p-2 bg-black/10 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <span className="text-sm">{message.file.name}</span>
-                                                <span className="text-xs opacity-70">({(message.file.size / 1024).toFixed(1)} KB)</span>
-                                            </div>
+                                            {Array.isArray(message.file) ? (
+                                                // Multiple files display
+                                                <div>
+                                                    <div className="text-xs opacity-80 mb-2">
+                                                        {message.file.length} file{message.file.length > 1 ? 's' : ''} attached:
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {message.file.map((file, index) => (
+                                                            <div key={index} className="flex items-center gap-2">
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                                <span className="text-xs">{file.name}</span>
+                                                                <span className="text-xs opacity-70">({(file.size / 1024).toFixed(1)} KB)</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                // Single file display (backward compatibility)
+                                                <div className="flex items-center gap-2">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    <span className="text-sm">{message.file.name}</span>
+                                                    <span className="text-xs opacity-70">({(message.file.size / 1024).toFixed(1)} KB)</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     <div className="whitespace-pre-wrap text-base" style={{ lineHeight: '1.6' }}>{message.text}</div>

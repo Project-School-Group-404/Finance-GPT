@@ -95,6 +95,9 @@ export const chatController = {
                     userMessage: chat.userMessage,
                     assistantReply: chat.assistantReply,
                     userId: chat.userId,
+                    // Include new documents JSON field
+                    documents: chat.documents,
+                    // Legacy single document fields for backward compatibility
                     documentName: chat.documentName,
                     documentType: chat.documentType,
                     documentPath: chat.documentPath,
@@ -119,12 +122,47 @@ export const chatController = {
                 documentName, 
                 documentType, 
                 documentPath, 
-                documentSize 
+                documentSize,
+                // New fields for multiple files
+                totalFiles,
+                additionalFilesInfo
             } = req.body;
 
             // Validation
             if (!userMessage || !assistantReply || !userId) {
                 return res.status(400).json({ error: 'User message, assistant reply, and user ID are required' });
+            }
+
+            // Prepare documents array for JSON storage
+            let documentsJson = null;
+            if (documentName || additionalFilesInfo) {
+                const documents = [];
+                
+                // Add primary document
+                if (documentName) {
+                    documents.push({
+                        name: documentName,
+                        type: documentType,
+                        path: documentPath,
+                        size: documentSize,
+                        uploadedAt: new Date().toISOString()
+                    });
+                }
+                
+                // Add additional documents
+                if (additionalFilesInfo && Array.isArray(additionalFilesInfo)) {
+                    additionalFilesInfo.forEach(fileInfo => {
+                        documents.push({
+                            name: fileInfo.name,
+                            type: fileInfo.type,
+                            path: `uploads/${fileInfo.name}`, // Assuming same upload path pattern
+                            size: fileInfo.size,
+                            uploadedAt: new Date().toISOString()
+                        });
+                    });
+                }
+                
+                documentsJson = documents;
             }
 
             // Save to database with document information
@@ -133,6 +171,9 @@ export const chatController = {
                     userMessage,
                     assistantReply,
                     userId: parseInt(userId),
+                    // New JSON field for multiple documents
+                    documents: documentsJson,
+                    // Legacy fields for backward compatibility
                     documentName: documentName || null,
                     documentType: documentType || null,
                     documentPath: documentPath || null,
