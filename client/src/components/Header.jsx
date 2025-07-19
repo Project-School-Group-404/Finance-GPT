@@ -24,7 +24,13 @@ function Header({ userName, onLogout, onSettingsClick }) {
         <header className="p-4" style={{backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-color)'}}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-xl font-semibold" style={{color: 'var(--text-primary)'}}>Finance GPT</h1>
+                    <h1 
+                        className="text-xl font-semibold cursor-pointer hover:opacity-80 transition-opacity" 
+                        style={{color: 'var(--text-primary)'}}
+                        onClick={() => window.location.href = '/'}
+                    >
+                        Finance GPT
+                    </h1>
                 </div>
                 <div className="relative">
                     <div 

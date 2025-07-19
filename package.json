@@ -8,10 +8,11 @@
     "frontend": "cd client && npm install",
     "setup": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run requirements\"",
     "dev": "concurrently \"npm run server:start\" \"npm run client:dev\"",
-    "fastapi": "cd FastAPI_Server && uvicorn Graph:app --host 127.0.0.1 --port 8000",
+    "fastapi": "cd FastAPI_Server && uvicorn main:app --host 127.0.0.1 --port 8080",
     "server:start": "cd server && npm start",
     "client:dev": "cd client && npm run dev",
-    "start": "concurrently \"npm run dev\" \"npm run fastapi\""
+    "start": "concurrently \"npm run dev\" \"npm run fastapi\"",
+    "install:all":"npm install && cd client && npm install && cd ../server && npm install"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import Navbar from './Navbar';
 
 export default function LandingPage() {
     const { theme, toggleTheme } = useTheme();
     const [isVisible, setIsVisible] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         setIsVisible(true);
     }, []);
 
     const handleGetStarted = () => {
-        // Open /login route in a new tab
-        window.open('/login', '_blank');
+        console.log('Get Started button clicked!');
+        console.log('Navigating to /login...');
+        navigate('/login');
     };
 
     const features = [
@@ -54,14 +57,14 @@ export default function LandingPage() {
                         </div>
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-12 leading-tight landing-hero">
-                            <span className="block">Frontier AI.</span>
+                            <span className="block">Your Finance.</span>
                             <span className="block gradient-text">
-                                In Your Hands.
+                                Evolved.
                             </span>
                         </h1>
 
                         <p className="text-xl md:text-2xl mb-16 max-w-3xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-                            Configurable AI for all financial builders. Harness the power of artificial intelligence 
+                            Harness the power of artificial intelligence 
                             to revolutionize your financial decision-making.
                         </p>
 

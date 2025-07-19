@@ -14,6 +14,18 @@ function Dashboard({ user, onLogout }) {
     const [hasLoadedHistory, setHasLoadedHistory] = useState(false)
     const { userName } = useUserData(user)
 
+    // Get time-based greeting
+    const getTimeBasedGreeting = () => {
+        const hour = new Date().getHours()
+        if (hour < 12) {
+            return 'Good Morning'
+        } else if (hour < 17) {
+            return 'Good Afternoon'
+        } else {
+            return 'Good Evening'
+        }
+    }
+
     // Load chat history from Node.js
     useEffect(() => {
         if (user?.id) {
@@ -309,7 +321,7 @@ function Dashboard({ user, onLogout }) {
                 {!hasMessages ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-8">
                         <div className="text-center mb-8">
-                            <div className="text-lg" style={{color: 'var(--text-secondary)'}}>Start a conversation with Finance GPT</div>
+                            <div className="text-3xl font-medium" style={{color: 'var(--accent-primary)'}}>{getTimeBasedGreeting()}, {userName || 'User'}</div>
                         </div>
                     </div>
                 ) : (

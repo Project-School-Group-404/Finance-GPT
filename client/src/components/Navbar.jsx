@@ -22,6 +22,12 @@ const Navbar = () => {
         }
     };
 
+    const handleGetStarted = () => {
+        console.log('Get Started button clicked!');
+        console.log('Navigating to /login...');
+        navigate('/login');
+    };
+
     return (
         <nav className="fixed top-0 w-full z-50 nav-backdrop border-b" 
              style={{ 
@@ -58,7 +64,7 @@ const Navbar = () => {
                             {theme === 'dark' ? '☀️' : '🌙'}
                         </button>
                         <button
-                            onClick={handleBackToHome}
+                            onClick={handleGetStarted}
                             className="px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 hover:shadow-lg"
                             style={{ 
                                 backgroundColor: 'var(--accent-primary)', 
